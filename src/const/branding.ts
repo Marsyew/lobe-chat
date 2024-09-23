@@ -4,5 +4,5 @@ export const LOBE_CHAT_CLOUD = 'LobeChat Cloud';
 // if you want to use it in the commercial usage
 // please contact us for more information: hello@lobehub.com
 
-export const BRANDING_NAME = 'LobeChat';
-export const BRANDING_LOGO_URL = '';
+export const BRANDING_NAME = 'XDChat';
+export const BRANDING_LOGO_URL = '/xdlogo.png';
