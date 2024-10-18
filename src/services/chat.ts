@@ -186,6 +186,7 @@ class ChatService {
     { plugins: enabledPlugins, messages, ...params }: GetChatCompletionPayload,
     options?: FetchOptions,
   ) => {
+    console.log('createAssistantMessage - Params:', { enabledPlugins, messages, ...params });
     const payload = merge(
       {
         model: DEFAULT_AGENT_CONFIG.model,
@@ -194,6 +195,8 @@ class ChatService {
       },
       params,
     );
+    console.log('createAssistantMessage - Payload:', payload);
+
     // ============  1. preprocess messages   ============ //
 
     const oaiMessages = this.processMessages(
@@ -208,6 +211,7 @@ class ChatService {
     // ============  2. preprocess tools   ============ //
 
     const filterTools = toolSelectors.enabledSchema(enabledPlugins)(useToolStore.getState());
+    console.log('Enabled tools:', filterTools); // 调试信息
 
     // check this model can use function call
     const canUseFC = modelProviderSelectors.isModelEnabledFunctionCall(payload.model)(
@@ -245,6 +249,7 @@ class ChatService {
   };
 
   getChatCompletion = async (params: Partial<ChatStreamPayload>, options?: FetchOptions) => {
+    console.log('getChatCompletion - Params:', params);
     const { signal } = options ?? {};
 
     const { provider = ModelProvider.OpenAI, ...res } = params;
@@ -260,9 +265,9 @@ class ChatService {
       const deploymentName = chatModelCards.find((i) => i.id === model)?.deploymentName;
       if (deploymentName) model = deploymentName;
     }
-
+    //default steream:true  changed false for test
     const payload = merge(
-      { model: DEFAULT_AGENT_CONFIG.model, stream: true, ...DEFAULT_AGENT_CONFIG.params },
+      { model: DEFAULT_AGENT_CONFIG.model, stream: false, ...DEFAULT_AGENT_CONFIG.params },
       { ...res, model },
     );
 
@@ -301,12 +306,15 @@ class ChatService {
       };
     }
 
+    console.log('getChatCompletion - Final Payload:', payload);
+
     const traceHeader = createTraceHeader({ ...options?.trace });
 
     const headers = await createHeaderWithAuth({
       headers: { 'Content-Type': 'application/json', ...traceHeader },
       provider,
     });
+    console.log('Headers for fetch:', headers);
 
     const providerConfig = DEFAULT_MODEL_PROVIDER_LIST.find((item) => item.id === provider);
 
@@ -409,10 +417,12 @@ class ChatService {
     },
     options?: FetchOptions,
   ): OpenAIChatMessage[] => {
+    console.log('processMessages called with:', { messages, model, options, tools });
     // handle content type for vision model
     // for the models with visual ability, add image url to content
     // refs: https://platform.openai.com/docs/guides/vision/quick-start
     const getContent = (m: ChatMessage) => {
+      console.log('getContent called with message:', m);
       if (!m.imageList) return m.content;
 
       const imageList = m.imageList;
@@ -438,7 +448,10 @@ class ChatService {
     let postMessages = messages.map((m): OpenAIChatMessage => {
       switch (m.role) {
         case 'user': {
-          return { content: getContent(m), role: m.role };
+          // return { content: getContent(m), role: m.role };
+          const message = { content: getContent(m), role: m.role };
+          console.log('Processed user message:', message); // 打印处理后的用户消息
+          return message;
         }
 
         case 'assistant': {
@@ -508,7 +521,10 @@ class ChatService {
       }
     });
 
-    return this.reorderToolMessages(postMessages);
+    // return this.reorderToolMessages(postMessages);
+    const reorderedMessages = this.reorderToolMessages(postMessages);
+    console.log('Reordered postMessages:', reorderedMessages); // 打印最终排序后的消息
+    return reorderedMessages;
   };
 
   private mapTrace(trace?: TracePayload, tag?: TraceTagMap): TracePayload {

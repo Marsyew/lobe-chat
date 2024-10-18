@@ -13,6 +13,9 @@ import { IMessageService } from './type';
 
 export class ServerService implements IMessageService {
   createMessage({ sessionId, ...params }: CreateMessageParams): Promise<string> {
+    console.log(
+      `[ServerService] Creating message with params: ${JSON.stringify(params)}, sessionId: ${sessionId}`,
+    );
     return lambdaClient.message.createMessage.mutate({
       ...params,
       sessionId: this.toDbSessionId(sessionId),
@@ -24,6 +27,9 @@ export class ServerService implements IMessageService {
   }
 
   getMessages(sessionId?: string, topicId?: string | undefined): Promise<ChatMessage[]> {
+    console.log(
+      `[ServerService] Fetching messages for sessionId: ${sessionId}, topicId: ${topicId}`,
+    );
     return lambdaClient.message.getMessages.query({
       sessionId: this.toDbSessionId(sessionId),
       topicId,
@@ -31,6 +37,7 @@ export class ServerService implements IMessageService {
   }
 
   getAllMessages(): Promise<ChatMessage[]> {
+    console.log(`[ServerService] Fetching all messages`);
     return lambdaClient.message.getAllMessages.query();
   }
   getAllMessagesInSession(sessionId: string): Promise<ChatMessage[]> {

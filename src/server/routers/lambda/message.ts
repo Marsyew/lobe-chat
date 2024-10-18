@@ -10,6 +10,7 @@ type ChatMessageList = ChatMessage[];
 
 const messageProcedure = authedProcedure.use(async (opts) => {
   const { ctx } = opts;
+  console.log(`User authenticated: ${ctx.userId}`);
 
   return opts.next({
     ctx: { messageModel: new MessageModel(ctx.userId) },
@@ -20,7 +21,10 @@ export const messageRouter = router({
   batchCreateMessages: messageProcedure
     .input(z.array(z.any()))
     .mutation(async ({ input, ctx }): Promise<BatchTaskResult> => {
+      console.log(`Batch create messages: Received input - ${JSON.stringify(input)}`);
+      console.error(`Error occurred during processing...`);
       const data = await ctx.messageModel.batchCreate(input);
+      console.log(`Batch create messages: Successfully added ${data.rowCount} messages.`);
 
       return { added: data.rowCount as number, ids: [], skips: [], success: true };
     }),
@@ -35,12 +39,15 @@ export const messageRouter = router({
   createMessage: messageProcedure
     .input(z.object({}).passthrough().partial())
     .mutation(async ({ input, ctx }) => {
+      console.log(`Creating a new message with data: ${JSON.stringify(input)}`);
       const data = await ctx.messageModel.create(input as any);
-
+      console.log(`New message created with ID: ${data.id}`);
       return data.id;
     }),
 
   getAllMessages: messageProcedure.query(async ({ ctx }): Promise<ChatMessageList> => {
+    const messages = await ctx.messageModel.queryAll();
+    console.log(`Total messages fetched: ${messages.length}`);
     return ctx.messageModel.queryAll();
   }),
 
@@ -67,6 +74,8 @@ export const messageRouter = router({
       if (!ctx.userId) return [];
 
       const messageModel = new MessageModel(ctx.userId);
+      const messages = await messageModel.query(input);
+      console.log(`Fetched ${messages.length} messages with the provided filters.`);
 
       return messageModel.query(input);
     }),
@@ -78,6 +87,7 @@ export const messageRouter = router({
   removeMessage: messageProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      console.log(`Removing message with ID: ${input.id}`);
       return ctx.messageModel.deleteMessage(input.id);
     }),
 
@@ -118,6 +128,7 @@ export const messageRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      console.log(`Updating message with ID: ${input.id} and data: ${JSON.stringify(input.value)}`);
       return ctx.messageModel.update(input.id, input.value);
     }),
 

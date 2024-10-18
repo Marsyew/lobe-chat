@@ -649,9 +649,12 @@ export const chatMessage: StateCreator<
         await refreshMessages();
       },
       onFinish: async (content, { traceId, observationId, toolCalls }) => {
+        console.log('AI 生成的完整回复:', content);
+        console.log('工具调用结果:', toolCalls);
         // if there is traceId, update it
         if (traceId) {
           msgTraceId = traceId;
+          console.log('更新消息的 traceId:', traceId);
           await messageService.updateMessage(assistantId, {
             traceId,
             observationId: observationId ?? undefined,
@@ -664,11 +667,14 @@ export const chatMessage: StateCreator<
 
         // update the content after fetch result
         await internal_updateMessageContent(assistantId, content, toolCalls);
+        console.log('消息内容更新完成消息ID:', assistantId);
       },
       onMessageHandle: async (chunk) => {
+        console.log('接收到的流式消息片段:', chunk);
         switch (chunk.type) {
           case 'text': {
             output += chunk.text;
+            console.log('当前累积的文本内容:', output);
             internal_dispatchMessage({
               id: assistantId,
               type: 'updateMessage',
@@ -679,6 +685,7 @@ export const chatMessage: StateCreator<
 
           // is this message is just a tool call
           case 'tool_calls': {
+            console.log('接收到的工具调用消息:', chunk.tool_calls);
             internal_toggleToolCallingStreaming(assistantId, chunk.isAnimationActives);
             internal_dispatchMessage({
               id: assistantId,

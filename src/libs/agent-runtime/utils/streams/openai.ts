@@ -20,6 +20,7 @@ export const transformOpenAIStream = (
   stack?: StreamStack,
 ): StreamProtocolChunk => {
   // maybe need another structure to add support for multiple choices
+  console.log('Transforming OpenAI stream chunk:', chunk);
 
   try {
     const item = chunk.choices[0];
@@ -30,8 +31,10 @@ export const transformOpenAIStream = (
     if (item.delta?.tool_calls) {
       return {
         data: item.delta.tool_calls.map((value, index): StreamToolCallChunkData => {
+          console.log(`Processing tool call #${index}:`, value);
           if (stack && !stack.tool) {
             stack.tool = { id: value.id!, index: value.index, name: value.function!.name! };
+            console.log('Tool stack updated:', stack.tool);
           }
 
           return {
@@ -61,8 +64,10 @@ export const transformOpenAIStream = (
     if (item.finish_reason) {
       // one-api 的流式接口，会出现既有 finish_reason ，也有 content 的情况
       //  {"id":"demo","model":"deepl-en","choices":[{"index":0,"delta":{"role":"assistant","content":"Introduce yourself."},"finish_reason":"stop"}]}
+      console.log('Finish reason detected:', item.finish_reason);
 
       if (typeof item.delta?.content === 'string' && !!item.delta.content) {
+        console.log('Returning content with finish reason.');
         return { data: item.delta.content, id: chunk.id, type: 'text' };
       }
 
@@ -70,12 +75,16 @@ export const transformOpenAIStream = (
     }
 
     if (typeof item.delta?.content === 'string') {
+      console.log('Returning text content:', item.delta.content);
       return { data: item.delta.content, id: chunk.id, type: 'text' };
     }
 
     if (item.delta?.content === null) {
+      console.log('Content is null, returning data.');
       return { data: item.delta, id: chunk.id, type: 'data' };
     }
+
+    console.log('Returning delta and index:', item.delta, item.index);
 
     // 其余情况下，返回 delta 和 index
     return {
@@ -107,6 +116,7 @@ export const transformOpenAIStream = (
 
 const chatStreamable = async function* (stream: AsyncIterable<OpenAI.ChatCompletionChunk>) {
   for await (const response of stream) {
+    console.log('Received response chunk from stream:', response);
     yield response;
   }
 };
@@ -119,6 +129,7 @@ export const OpenAIStream = (
 
   const readableStream =
     stream instanceof ReadableStream ? stream : readableFromAsyncIterable(chatStreamable(stream));
+  console.log('Readable stream created, piping through transformers...');
 
   return readableStream
     .pipeThrough(createSSEProtocolTransformer(transformOpenAIStream, streamStack))
