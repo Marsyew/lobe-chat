@@ -1,11 +1,9 @@
 'use client';
 
-import { ActionIcon, Avatar, Grid } from '@lobehub/ui';
+import { Avatar, Grid } from '@lobehub/ui';
 import { Skeleton, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import isEqual from 'fast-deep-equal';
-import { RefreshCw } from 'lucide-react';
-import Link from 'next/link';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Flexbox } from 'react-layout-kit';
@@ -57,7 +55,7 @@ const useStyles = createStyles(({ css, token, responsive }) => ({
 const AgentsSuggest = memo<{ mobile?: boolean }>(({ mobile }) => {
   const { t } = useTranslation('welcome');
 
-  const [sliceStart, setSliceStart] = useState(0);
+  const [sliceStart /* , setSliceStart */] = useState(0);
   const useFetchAgentList = useMarketStore((s) => s.useFetchAgentList);
   const { isLoading } = useFetchAgentList();
   const agentList = useMarketStore((s) => s.agentList, isEqual);
@@ -71,23 +69,23 @@ const AgentsSuggest = memo<{ mobile?: boolean }>(({ mobile }) => {
     </Flexbox>
   ));
 
-  const handleRefresh = () => {
-    if (!agentList) return;
-    setSliceStart(Math.floor((Math.random() * agentList.length) / 2));
-  };
+  // const handleRefresh = () => {
+  //   if (!agentList) return;
+  //   setSliceStart(Math.floor((Math.random() * agentList.length) / 2));
+  // };
 
   return (
     <Flexbox gap={8} width={'100%'}>
       <Flexbox align={'center'} horizontal justify={'space-between'}>
         <div className={styles.title}>{t('guide.agents.title')}</div>
-        <ActionIcon
+        {/* <ActionIcon
           icon={RefreshCw}
           onClick={handleRefresh}
           size={{ blockSize: 24, fontSize: 14 }}
           title={t('guide.agents.replaceBtn')}
-        />
+        /> */}
       </Flexbox>
-      <Grid gap={8} rows={2}>
+      {/* <Grid gap={8} rows={2}>
         {isLoading
           ? loadingCards
           : agentList.slice(sliceStart, sliceStart + agentLength).map((agent) => (
@@ -105,6 +103,58 @@ const AgentsSuggest = memo<{ mobile?: boolean }>(({ mobile }) => {
                 </Flexbox>
               </Link>
             ))}
+      </Grid> */}
+      <Grid gap={8} rows={2}>
+        {isLoading
+          ? loadingCards
+          : agentList.slice(sliceStart, sliceStart + 4).map((agent, index) => {
+              let customTitle = '';
+              let customDescription = '';
+
+              switch (index) {
+                case 0: {
+                  customTitle = 'Telegram chat';
+                  customDescription = '南海问题交流.';
+                  break;
+                }
+                case 1: {
+                  customTitle = 'Discord chat';
+                  customDescription = '日本参拜靖国神社.';
+                  break;
+                }
+                case 2: {
+                  customTitle = 'Weibo chat';
+                  customDescription = '菲律宾争端.';
+                  break;
+                }
+                case 3: {
+                  customTitle = 'Twitter chat';
+                  customDescription = '台湾问题交流.';
+                  break;
+                }
+                default: {
+                  customTitle = agent.meta.title || 'Default Title';
+                  customDescription = agent.meta.description || 'Default description';
+                  break;
+                }
+              }
+
+              return (
+                // <Link href={`/market?agent=${agent.identifier}`} key={agent.identifier}>
+                <Flexbox className={styles.card} gap={8} horizontal key={agent.identifier}>
+                  <Avatar avatar={agent.meta.avatar} style={{ flex: 'none' }} />
+                  <Flexbox gap={mobile ? 2 : 8} style={{ overflow: 'hidden', width: '100%' }}>
+                    <Paragraph className={styles.cardTitle} ellipsis={{ rows: 1 }}>
+                      {customTitle}
+                    </Paragraph>
+                    <Paragraph className={styles.cardDesc} ellipsis={{ rows: mobile ? 1 : 2 }}>
+                      {customDescription}
+                    </Paragraph>
+                  </Flexbox>
+                </Flexbox>
+                // </Link>
+              );
+            })}
       </Grid>
     </Flexbox>
   );
