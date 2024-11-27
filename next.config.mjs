@@ -136,6 +136,11 @@ const nextConfig = {
       type: 'javascript/auto',
     });
 
+    config.resolve.fallback = {
+      fs: false,
+      crypto: false,
+    };
+
     // https://github.com/pinojs/pino/issues/688#issuecomment-637763276
     config.externals.push('pino-pretty');
 

@@ -74,12 +74,15 @@ export class Unstructured {
     originElements: UnstructuredPartitionElement[];
   }> {
     const hasChunkingStrategy = !!params.chunkingStrategy;
+    //no fileContenBuffer node.js
+    const fileContentBuffer = Buffer.from(params.fileContent);
     const response = await this.client.general.partition({
       partitionParameters: {
         chunkingStrategy: params.chunkingStrategy,
         coordinates: true,
         // extractImageBlockTypes: ['Image'],
-        files: { content: params.fileContent, fileName: params.filename },
+        // files: { content: params.fileContent, fileName: params.filename },
+        files: { content: fileContentBuffer, fileName: params.filename },
 
         includeOrigElements: true,
         maxCharacters: params.maxCharacters || 800,
